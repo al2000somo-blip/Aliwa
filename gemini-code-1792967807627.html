@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>عليوه للصيانة - نظام الإدارة المتكامل</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap');
+        body { font-family: 'Cairo', sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen">
+
+    <!-- شاشة تسجيل الدخول -->
+    <div id="login-screen" class="fixed inset-0 bg-slate-950 flex items-center justify-center z-50 p-4">
+        <div class="bg-slate-900 border border-slate-800 p-8 rounded-2xl shadow-2xl max-w-md w-full">
+            <div class="text-center mb-6">
+                <div class="w-16 h-16 bg-blue-600 rounded-2xl mx-auto flex items-center justify-center shadow-lg shadow-blue-500/30 mb-4">
+                    <i class="fa-solid fa-screwdriver-wrench text-2xl text-white"></i>
+                </div>
+                <h1 class="text-2xl font-bold text-white">محل عليوه للصيانة</h1>
+                <p class="text-slate-400 text-sm mt-1">تسجيل دخول المدير</p>
+            </div>
+            <form id="login-form" onsubmit="handleLogin(event)" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-300 mb-1">البريد الإلكتروني</label>
+                    <input type="email" id="login-email" value="al2000somo@gmail.com" required readonly
+                        class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-slate-400 cursor-not-allowed">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-300 mb-1">كلمة المرور</label>
+                    <input type="password" id="login-pass" placeholder="أدخل كلمة المرور" required
+                        class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500">
+                </div>
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl transition shadow-lg shadow-blue-600/30">
+                    دخول لوحة التحكم
+                </button>
+            </form>
+            <div class="mt-6 text-center border-t border-slate-800 pt-4">
+                <button onclick="switchMode('client')" class="text-sm text-blue-400 hover:underline">
+                    <i class="fa-solid fa-magnifying-glass ml-1"></i> هل أنت زبون؟ استعلم عن جهازك هنا
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- واجهة استعلام الزبون -->
+    <div id="client-screen" class="hidden min-h-screen p-4 md:p-8">
+        <div class="max-w-xl mx-auto space-y-6">
+            <div class="flex justify-between items-center bg-slate-900 border border-slate-800 p-4 rounded-2xl shadow-lg">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center font-bold text-white">ع</div>
+                    <h1 class="font-bold text-lg text-white">محل عليوه للصيانة</h1>
+                </div>
+                <button onclick="switchMode('login')" class="text-sm bg-slate-800 hover:bg-slate-700 px-4 py-2 rounded-xl text-slate-300 transition">
+                    <i class="fa-solid fa-lock ml-1"></i> دخول المدير
+                </button>
+            </div>
+
+            <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl text-center space-y-4">
+                <h2 class="text-xl font-bold text-white">بوابة استعلام الزبائن</h2>
+                <p class="text-slate-400 text-sm">أدخل رقم هاتفك المسجل لدينا لمتابعة حالة صيانة جهازك وتفاصيله لحظة بلحظة</p>
+                <div class="flex gap-2 max-w-md mx-auto">
+                    <input type="text" id="client-phone-input" placeholder="أدخل رقم هاتفك..." 
+                        class="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500">
+                    <button onclick="searchClientDevice()" class="bg-blue-600 hover:bg-blue-500 text-white px-6 rounded-xl font-bold transition">بحث</button>
+                </div>
+            </div>
+
+            <div id="client-results" class="space-y-4"></div>
+        </div>
+    </div>
+
+    <!-- لوحة تحكم المدير -->
+    <div id="admin-screen" class="hidden min-h-screen flex flex-col">
+        <header class="bg-slate-900 border-b border-slate-800 px-6 py-4 flex justify-between items-center shadow-md">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center font-bold text-white shadow-lg shadow-blue-600/30">ع</div>
+                <div>
+                    <h1 class="font-bold text-lg text-white">محل عليوه للصيانة</h1>
+                    <p class="text-xs text-emerald-400 font-medium">● لوحة التحكم النشطة</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-3">
+                <button onclick="switchMode('client')" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2 rounded-xl text-sm transition flex items-center gap-2">
+                    <i class="fa-solid fa-eye"></i> معاينة واجهة الزبون
+                </button>
+                <button onclick="logout()" class="bg-red-500/10 text-red-400 hover:bg-red-500/20 px-4 py-2 rounded-xl text-sm transition font-medium">تسجيل خروج</button>
+            </div>
+        </header>
+
+        <main class="flex-1 p-4 md:p-8 max-w-7xl mx-auto w-full space-y-6">
+            <!-- الإحصائيات العامة -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-lg">
+                    <p class="text-slate-400 text-xs">إجمالي الأجهزة</p>
+                    <h3 id="stat-total" class="text-2xl font-bold mt-1 text-white">0</h3>
+                </div>
+                <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-lg">
+                    <p class="text-slate-400 text-xs">قيد الصيانة</p>
+                    <h3 id="stat-repairing" class="text-2xl font-bold mt-1 text-yellow-400">0</h3>
+                </div>
+                <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-lg">
+                    <p class="text-slate-400 text-xs">تم الإصلاح</p>
+                    <h3 id="stat-fixed" class="text-2xl font-bold mt-1 text-emerald-400">0</h3>
+                </div>
+                <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-lg">
+                    <p class="text-slate-400 text-xs">تم التسليم</p>
+                    <h3 id="stat-delivered" class="text-2xl font-bold mt-1 text-purple-400">0</h3>
+                </div>
+            </div>
+
+            <!-- الجرد اليومي والتقارير المالية -->
+            <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl space-y-4">
+                <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                    <h2 class="font-bold text-lg text-white flex items-center gap-2">
+                        <i class="fa-solid fa-chart-line text-blue-500"></i> الجرد اليومي والتقارير المالية
+                    </h2>
+                    <span class="text-xs text-slate-400" id="current-date-display"></span>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="bg-slate-800/50 border border-slate-700/50 p-4 rounded-xl">
+                        <p class="text-slate-400 text-xs">إجمالي الإيرادات (المبيعات)</p>
+                        <h3 id="fin-revenue" class="text-xl font-bold mt-1 text-blue-400">0 د.ل</h3>
+                    </div>
+                    <div class="bg-slate-800/50 border border-slate-700/50 p-4 rounded-xl">
+                        <p class="text-slate-400 text-xs">إجمالي المصروفات</p>
+                        <h3 id="fin-expenses" class="text-xl font-bold mt-1 text-red-400">0 د.ل</h3>
+                    </div>
+                    <div class="bg-slate-800/50 border border-slate-700/50 p-4 rounded-xl">
+                        <p class="text-slate-400 text-xs">صافي الربح</p>
+                        <h3 id="fin-net" class="text-xl font-bold mt-1 text-emerald-400">0 د.ل</h3>
+                    </div>
+                </div>
+            </div>
+
+            <!-- أزرار الإجراءات -->
+            <div class="flex flex-wrap gap-3">
+                <button onclick="openModal('device-modal')" class="bg-blue-600 hover:bg-blue-500 text-white px-5 py-3 rounded-xl font-bold text-sm transition flex items-center gap-2 shadow-lg shadow-blue-600/30">
+                    <i class="fa-solid fa-plus"></i> تسجيل جهاز جديد
+                </button>
+                <button onclick="openModal('expense-modal')" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-5 py-3 rounded-xl font-bold text-sm transition flex items-center gap-2">
+                    <i class="fa-solid fa-wallet"></i> إضافة مصروف يومي
+                </button>
+            </div>
+
+            <!-- جدول الأجهزة -->
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+                <div class="p-4 border-b border-slate-800 flex justify-between items-center">
+                    <h2 class="font-bold text-lg">قائمة الأجهزة المسجلة والصيانة</h2>
+                    <input type="text" id="search-devices" oninput="renderDevices()" placeholder="بحث بالاسم أو الرقم..." 
+                        class="bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500">
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-right text-sm">
+                        <thead class="bg-slate-800/50 text-slate-400">
+                            <tr>
+                                <th class="p-4">الزبون والهاتف</th>
+                                <th class="p-4">الجهاز</th>
+                                <th class="p-4">العطل</th>
+                                <th class="p-4">المستلم / الفني</th>
+                                <th class="p-4">التكلفة</th>
+                                <th class="p-4">الحالة</th>
+                                <th class="p-4">إجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody id="devices-tbody" class="divide-y divide-slate-800">
+                            <!-- بيانات ديناميكية -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- جدول المصروفات المسجلة -->
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl mt-6">
+                <div class="p-4 border-b border-slate-800">
+                    <h2 class="font-bold text-lg text-slate-200">سجل المصروفات اليومية</h2>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-right text-sm">
+                        <thead class="bg-slate-800/50 text-slate-400">
+                            <tr>
+                                <th class="p-4">بيان المصروف</th>
+                                <th class="p-4">المبلغ</th>
+                                <th class="p-4">التاريخ</th>
+                                <th class="p-4">إجراء</th>
+                            </tr>
+                        </thead>
+                        <tbody id="expenses-tbody" class="divide-y divide-slate-800">
+                            <!-- بيانات ديناميكية -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- نافذة إضافة وتعديل جهاز -->
+    <div id="device-modal" class="fixed inset-0 bg-black/70 hidden items-center justify-center z-50 p-4">
+        <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-lg w-full space-y-4 shadow-2xl">
+            <h3 id="modal-title" class="text-xl font-bold text-white">تسجيل جهاز جديد للصيانة</h3>
+            <form id="device-form" onsubmit="saveDevice(event)" class="space-y-3">
+                <input type="hidden" id="device-id">
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1">اسم الزبون</label>
+                    <input type="text" id="cust-name" required class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white">
+                </div>
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1">رقم الهاتف</label>
+                    <input type="text" id="cust-phone" required class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white">
+                </div>
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1">نوع الجهاز</label>
+                    <input type="text" id="device-model" placeholder="مثال: iPhone 11 / Samsung A52" required class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white">
+                </div>
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1">وصف العطل</label>
+                    <textarea id="device-issue" required class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white"></textarea>
+                </div>
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1">اسم المستلم أو الفني المسؤول</label>
+                    <input type="text" id="device-technician" placeholder="مثال: محمد، علي، إلخ..." required class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white">
+                </div>
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1">التكلفة (د.ل)</label>
+                    <input type="number" id="device-cost" required class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white">
+                </div>
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1">حالة الجهاز</label>
+                    <select id="device-status" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white">
+                        <option value="تحقّق">تحقّق</option>
+                        <option value="قيد الصيانة">قيد الصيانة</option>
+                        <option value="تم الإصلاح">تم الإصلاح</option>
+                        <option value="تم التسليم">تم التسليم</option>
+                    </select>
+                </div>
+                <div class="flex justify-end gap-2 pt-3">
+                    <button type="button" onclick="closeModal('device-modal')" class="bg-slate-800 px-4 py-2 rounded-xl text-slate-300">إلغاء</button>
+                    <button type="submit" class="bg-blue-600 hover:bg-blue-500 px-5 py-2 rounded-xl text-white font-bold">حفظ</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- نافذة نقل الجهاز لشخص آخر -->
+    <div id="transfer-modal" class="fixed inset-0 bg-black/70 hidden items-center justify-center z-50 p-4">
+        <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-md w-full space-y-4 shadow-2xl">
+            <h3 class="text-xl font-bold text-white">نقل الجهاز لفني / شخص آخر</h3>
+            <form onsubmit="confirmTransfer(event)" class="space-y-3">
+                <input type="hidden" id="transfer-device-id">
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1">اسم الفني الجديد / الشخص المسؤول</label>
+                    <input type="text" id="new-technician-name" placeholder="أدخل اسم الشخص الجديد..." required class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white">
+                </div>
+                <div class="flex justify-end gap-2 pt-3">
+                    <button type="button" onclick="closeModal('transfer-modal')" class="bg-slate-800 px-4 py-2 rounded-xl text-slate-300">إلغاء</button>
+                    <button type="submit" class="bg-emerald-600 hover:bg-emerald-500 px-5 py-2 rounded-xl text-white font-bold">تأكيد النقل</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- نافذة المصروفات -->
+    <div id="expense-modal" class="fixed inset-0 bg-black/70 hidden items-center justify-center z-50 p-4">
+        <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-md w-full space-y-4 shadow-2xl">
+            <h3 class="text-xl font-bold text-white">إضافة مصروف يومي</h3>
+            <form onsubmit="saveExpense(event)" class="space-y-3">
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1">بيان المصروف</label>
+                    <input type="text" id="exp-title" placeholder="مثال: أدوات صيانة، فاتورة كهرباء" required class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white">
+                </div>
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1">المبلغ (د.ل)</label>
+                    <input type="number" id="exp-amount" required class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white">
+                </div>
+                <div class="flex justify-end gap-2 pt-3">
+                    <button type="button" onclick="closeModal('expense-modal')" class="bg-slate-800 px-4 py-2 rounded-xl text-slate-300">إلغاء</button>
+                    <button type="submit" class="bg-blue-600 hover:bg-blue-500 px-5 py-2 rounded-xl text-white font-bold">حفظ</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let devices = JSON.parse(localStorage.getItem('aliwa_devices')) || [];
+        let expenses = JSON.parse(localStorage.getItem('aliwa_expenses')) || [];
+
+        document.getElementById('current-date-display').innerText = 'تاريخ اليوم: ' + new Date().toLocaleDateString('ar-LY');
+
+        function switchMode(mode) {
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('client-screen').classList.add('hidden');
+            document.getElementById('admin-screen').classList.add('hidden');
+
+            if (mode === 'login') document.getElementById('login-screen').classList.remove('hidden');
+            if (mode === 'client') document.getElementById('client-screen').classList.remove('hidden');
+            if (mode === 'admin') {
+                document.getElementById('admin-screen').classList.remove('hidden');
+                renderDashboard();
+            }
+        }
+
+        function handleLogin(e) {
+            e.preventDefault();
+            const pass = document.getElementById('login-pass').value;
+            if (pass === 'Somo@1997') {
+                switchMode('admin');
+            } else {
+                alert('كلمة المرور غير صحيحة!');
+            }
+        }
+
+        function logout() {
+            switchMode('login');
+        }
+
+        function openModal(id) {
+            if(id === 'device-modal') {
+                document.getElementById('modal-title').innerText = 'تسجيل جهاز جديد للصيانة';
+                document.getElementById('device-form').reset();
+                document.getElementById('device-id').value = '';
+            }
+            document.getElementById(id).classList.remove('hidden');
+            document.getElementById(id).classList.add('flex');
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.add('hidden');
+            document.getElementById(id).classList.remove('flex');
+        }
+
+        function saveDevice(e) {
+            e.preventDefault();
+            const id = document.getElementById('device-id').value;
+            const deviceData = {
+                id: id ? Number(id) : Date.now(),
+                name: document.getElementById('cust-name').value,
+                phone: document.getElementById('cust-phone').value,
+                model: document.getElementById('device-model').value,
+                issue: document.getElementById('device-issue').value,
+                technician: document.getElementById('device-technician').value,
+                cost: Number(document.getElementById('device-cost').value),
+                status: document.getElementById('device-status').value,
+                date: new Date().toLocaleDateString('ar-LY')
+            };
+
+            if (id) {
+                const index = devices.findIndex(d => d.id == id);
+                devices[index] = deviceData;
+            } else {
+                devices.push(deviceData);
+            }
+
+            localStorage.setItem('aliwa_devices', JSON.stringify(devices));
+            closeModal('device-modal');
+            document.getElementById('device-form').reset();
+            document.getElementById('device-id').value = '';
+            renderDashboard();
+        }
+
+        function transferDevice(id) {
+            document.getElementById('transfer-device-id').value = id;
+            document.getElementById('new-technician-name').value = '';
+            openModal('transfer-modal');
+        }
+
+        function confirmTransfer(e) {
+            e.preventDefault();
+            const id = Number(document.getElementById('transfer-device-id').value);
+            const newTech = document.getElementById('new-technician-name').value;
+            
+            const index = devices.findIndex(d => d.id === id);
+            if (index !== -1) {
+                devices[index].technician = newTech;
+                localStorage.setItem('aliwa_devices', JSON.stringify(devices));
+                closeModal('transfer-modal');
+                renderDashboard();
+                alert('تم نقل الجهاز بنجاح إلى: ' + newTech);
+            }
+        }
+
+        function saveExpense(e) {
+            e.preventDefault();
+            const exp = {
+                id: Date.now(),
+                title: document.getElementById('exp-title').value,
+                amount: Number(document.getElementById('exp-amount').value),
+                date: new Date().toLocaleDateString('ar-LY')
+            };
+            expenses.push(exp);
+            localStorage.setItem('aliwa_expenses', JSON.stringify(expenses));
+            closeModal('expense-modal');
+            renderDashboard();
+        }
+
+        function deleteDevice(id) {
+            if (confirm('هل أنت متأكد من حذف هذا الجهاز؟')) {
+                devices = devices.filter(d => d.id !== id);
+                localStorage.setItem('aliwa_devices', JSON.stringify(devices));
+                renderDashboard();
+            }
+        }
+
+        function deleteExpense(id) {
+            if (confirm('هل أنت متأكد من حذف هذا المصروف؟')) {
+                expenses = expenses.filter(e => e.id !== id);
+                localStorage.setItem('aliwa_expenses', JSON.stringify(expenses));
+                renderDashboard();
+            }
+        }
+
+        function editDevice(id) {
+            const d = devices.find(item => item.id === id);
+            if (d) {
+                document.getElementById('modal-title').innerText = 'تعديل بيانات الجهاز';
+                document.getElementById('device-id').value = d.id;
+                document.getElementById('cust-name').value = d.name;
+                document.getElementById('cust-phone').value = d.phone;
+                document.getElementById('device-model').value = d.model;
+                document.getElementById('device-issue').value = d.issue;
+                document.getElementById('device-technician').value = d.technician || '';
+                document.getElementById('device-cost').value = d.cost;
+                document.getElementById('device-status').value = d.status;
+                openModal('device-modal');
+            }
+        }
+
+        function renderDashboard() {
+            document.getElementById('stat-total').innerText = devices.length;
+            document.getElementById('stat-repairing').innerText = devices.filter(d => d.status === 'قيد الصيانة').length;
+            document.getElementById('stat-fixed').innerText = devices.filter(d => d.status === 'تم الإصلاح').length;
+            document.getElementById('stat-delivered').innerText = devices.filter(d => d.status === 'تم التسليم').length;
+            
+            const totalRev = devices.reduce((sum, d) => sum + d.cost, 0);
+            const totalExp = expenses.reduce((sum, e) => sum + e.amount, 0);
+            const netProfit = totalRev - totalExp;
+
+            document.getElementById('fin-revenue').innerText = totalRev + ' د.ل';
+            document.getElementById('fin-expenses').innerText = totalExp + ' د.ل';
+            document.getElementById('fin-net').innerText = netProfit + ' د.ل';
+
+            renderDevices();
+            renderExpenses();
+        }
+
+        function renderDevices() {
+            const query = document.getElementById('search-devices').value.toLowerCase();
+            const tbody = document.getElementById('devices-tbody');
+            tbody.innerHTML = '';
+
+            const filtered = devices.filter(d => d.name.toLowerCase().includes(query) || d.phone.includes(query) || d.model.toLowerCase().includes(query));
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-slate-500">لا توجد أجهزة مسجلة</td></tr>`;
+                return;
+            }
+
+            filtered.forEach(d => {
+                let statusColor = 'bg-blue-500/10 text-blue-400';
+                if (d.status === 'قيد الصيانة') statusColor = 'bg-yellow-500/10 text-yellow-400';
+                if (d.status === 'تم الإصلاح') statusColor = 'bg-emerald-500/10 text-emerald-400';
+                if (d.status === 'تم التسليم') statusColor = 'bg-purple-500/10 text-purple-400';
+
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-800/40">
+                        <td class="p-4">
+                            <div class="font-bold text-white">${d.name}</div>
+                            <div class="text-xs text-slate-400">${d.phone}</div>
+                        </td>
+                        <td class="p-4 font-medium">${d.model}</td>
+                        <td class="p-4 text-slate-300">${d.issue}</td>
+                        <td class="p-4 text-emerald-400 font-medium"><i class="fa-solid fa-user-gear ml-1"></i> ${d.technician || 'غير محدد'}</td>
+                        <td class="p-4 font-bold text-blue-400">${d.cost} د.ل</td>
+                        <td class="p-4"><span class="px-3 py-1 rounded-full text-xs font-bold ${statusColor}">${d.status}</span></td>
+                        <td class="p-4 flex gap-1">
+                            <button onclick="transferDevice(${d.id})" class="text-emerald-400 hover:text-emerald-300 p-1.5 bg-emerald-500/10 rounded-lg" title="نقل لفني آخر"><i class="fa-solid fa-right-left"></i></button>
+                            <button onclick="editDevice(${d.id})" class="text-slate-400 hover:text-white p-1.5 bg-slate-800 rounded-lg" title="تعديل"><i class="fa-solid fa-pen"></i></button>
+                            <button onclick="deleteDevice(${d.id})" class="text-red-400 hover:text-red-300 p-1.5 bg-red-500/10 rounded-lg" title="حذف"><i class="fa-solid fa-trash"></i></button>
+                            <a href="https://wa.me/218${d.phone.replace(/^0/, '')}?text=مرحباً%20${d.name}،%20بخصوص%20جهازك%20${d.model}%20-%20حالة%20الصيانة:%20${d.status}" target="_blank" class="text-emerald-400 hover:text-emerald-300 p-1.5 bg-emerald-500/10 rounded-lg" title="واتساب"><i class="fa-brands fa-whatsapp"></i></a>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        function renderExpenses() {
+            const tbody = document.getElementById('expenses-tbody');
+            tbody.innerHTML = '';
+
+            if (expenses.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" class="p-6 text-center text-slate-500">لا توجد مصروفات مسجلة</td></tr>`;
+                return;
+            }
+
+            expenses.forEach(e => {
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-800/40">
+                        <td class="p-4 text-white font-medium">${e.title}</td>
+                        <td class="p-4 font-bold text-red-400">${e.amount} د.ل</td>
+                        <td class="p-4 text-slate-400">${e.date}</td>
+                        <td class="p-4">
+                            <button onclick="deleteExpense(${e.id})" class="text-red-400 hover:text-red-300 p-1.5 bg-red-500/10 rounded-lg" title="حذف"><i class="fa-solid fa-trash"></i></button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        function searchClientDevice() {
+            const phone = document.getElementById('client-phone-input').value.trim();
+            const container = document.getElementById('client-results');
+            container.innerHTML = '';
+
+            if (!phone) {
+                alert('الرجاء إدخال رقم الهاتف');
+                return;
+            }
+
+            const clientDevices = devices.filter(d => d.phone.includes(phone));
+
+            if (clientDevices.length === 0) {
+                container.innerHTML = `<div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl text-center text-slate-400 shadow-xl">لا توجد أجهزة مسجلة بهذا الرقم</div>`;
+                return;
+            }
+
+            clientDevices.forEach(d => {
+                let statusColor = 'bg-blue-500/10 text-blue-400';
+                if (d.status === 'قيد الصيانة') statusColor = 'bg-yellow-500/10 text-yellow-400';
+                if (d.status === 'تم الإصلاح') statusColor = 'bg-emerald-500/10 text-emerald-400';
+                if (d.status === 'تم التسليم') statusColor = 'bg-purple-500/10 text-purple-400';
+
+                container.innerHTML += `
+                    <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-4 shadow-xl">
+                        <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                            <div>
+                                <h3 class="font-bold text-lg text-white">${d.model}</h3>
+                                <p class="text-xs text-slate-400">الزبون: ${d.name}</p>
+                            </div>
+                            <span class="px-3 py-1 rounded-full text-xs font-bold ${statusColor}">${d.status}</span>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4 text-sm">
+                            <div><span class="text-slate-500 block text-xs">العطل:</span> <span class="text-slate-200">${d.issue}</span></div>
+                            <div><span class="text-slate-500 block text-xs">التكلفة:</span> <span class="text-blue-400 font-bold">${d.cost} د.ل</span></div>
+                        </div>
+                        <div class="pt-2 flex justify-between items-center text-xs text-slate-500">
+                            <span>تاريخ التسجيل: ${d.date}</span>
+                            <a href="https://wa.me/218910000000?text=مرحباً%20محل%20عليوه،%20أستفسر%20عن%20جهازي%20${d.model}%20رقم%20الهاتف%20${d.phone}" target="_blank" class="text-emerald-400 hover:underline flex items-center gap-1 font-bold">
+                                <i class="fa-brands fa-whatsapp text-sm"></i> تواصل معنا
+                            </a>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+    </script>
+</body>
+</html>
